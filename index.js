@@ -6,7 +6,7 @@ const { exec } = require("child_process");
 
 const express = require("express");
 
-const PORT = 8080;
+const PORT = 80;
 
 const app = express();
 
@@ -60,7 +60,7 @@ class Server {
 
     app.get("/gpio/:pin", (req, res) => {
       try {
-        if (!req.params.pin) throw "Wrong request. Undefined pin!";
+        if (isNaN(req.params.pin)) throw "Wrong request. Undefined pin!";
 
         exec(`gpio read ${req.params.pin}`, (err, stdout, stderr) => {
           if (err) throw err;
@@ -73,16 +73,19 @@ class Server {
         });
       } catch (error) {
         this.Log(error);
+        res.status(500).json({
+          error: error,
+        });
       }
     });
 
     app.post("/gpio/write", (req, res) => {
       try {
-        if (!req.body.pin || !req.body.state)
-          throw "Wrong request. Undefined pin!";
+        if (isNaN(req.body.pin)) throw "Wrong request. Undefined pin!";
+        if (req.body.state !== 0 && req.body.state !== 1) throw "Wrong state!";
 
         exec(
-          `gpio write ${req.params.pin} ${req.body.state ? 1 : 0}`,
+          `gpio write ${req.body.pin} ${req.body.state}`,
           (err, stdout, stderr) => {
             if (err) throw err;
 
@@ -95,16 +98,20 @@ class Server {
         );
       } catch (error) {
         this.Log(error);
+        res.status(500).json({
+          error: error,
+        });
       }
     });
 
     app.post("/gpio/mode", (req, res) => {
       try {
-        if (!req.body.pin || !req.body.state)
-          throw "Wrong request. Undefined pin!";
+        if (isNaN(req.body.pin)) throw "Wrong request. Undefined pin!";
+        if (req.body.mode !== "in" && req.body.mode !== "out")
+          throw "Wrong mode!";
 
         exec(
-          `gpio write ${req.params.pin} ${req.body.state}`,
+          `gpio mode ${req.body.pin} ${req.body.mode}`,
           (err, stdout, stderr) => {
             if (err) throw err;
 
@@ -117,6 +124,9 @@ class Server {
         );
       } catch (error) {
         this.Log(error);
+        res.status(500).json({
+          error: error,
+        });
       }
     });
 
